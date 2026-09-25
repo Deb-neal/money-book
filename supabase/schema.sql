@@ -42,3 +42,6 @@ create policy "own recurring" on public.recurring
 drop policy if exists "own transactions" on public.transactions;
 create policy "own transactions" on public.transactions
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- 로그인한 사용자(authenticated)에게 테이블 권한 부여. 실제 접근 범위는 위 RLS 정책이 제한한다.
+grant select, insert, update, delete on public.recurring, public.transactions to authenticated;

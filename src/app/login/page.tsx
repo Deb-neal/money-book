@@ -46,7 +46,7 @@ export default function LoginPage() {
         </form>
       ) : (
         <p className="card p-4 text-sm text-ink-2">
-          Supabase가 아직 연결되지 않았어요. <code>.env.local</code>에 URL과 키를 넣으면 로그인할 수 있어요.
+          로그인 서버가 연결되지 않은 빌드예요. 아래 데모로 둘러볼 수 있어요.
         </p>
       )}
 
