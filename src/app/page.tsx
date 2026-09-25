@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useApp } from "@/components/AppProvider";
+import { Icon, SETTINGS_ICON } from "@/components/AppShell";
 import { CategoryBars, DailyCumulativeChart, YearChart } from "@/components/Charts";
 import { EditSheet } from "@/components/EditSheet";
 import { MonthSwitcher } from "@/components/MonthSwitcher";
@@ -65,11 +66,16 @@ export default function Dashboard() {
     <div className="space-y-4">
       <header className="flex items-center justify-between">
         <MonthSwitcher month={month} onChange={setMonth} />
-        {!isCurrent && (
-          <button className="chip" onClick={() => setMonth(currentMonth())}>
-            이번 달
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {!isCurrent && (
+            <button className="chip" onClick={() => setMonth(currentMonth())}>
+              이번 달
+            </button>
+          )}
+          <Link href="/settings/" aria-label="설정" className="rounded-full p-2 text-ink-2">
+            <Icon d={SETTINGS_ICON} size={22} />
+          </Link>
+        </div>
       </header>
 
       {error && <p className="card p-3 text-sm text-danger">불러오지 못했어요: {error}</p>}
@@ -132,7 +138,12 @@ export default function Dashboard() {
       </section>
 
       <section className="card p-4">
-        <h2 className="mb-2 font-semibold">{year}년 월별 현황</h2>
+        <div className="mb-2 flex items-baseline justify-between">
+          <h2 className="font-semibold">{year}년 월별 현황</h2>
+          <Link href="/yearly/" className="text-xs text-accent">
+            연간 표로 보기
+          </Link>
+        </div>
         <YearChart data={view.yearly} selected={month} onSelect={setMonth} />
         <p className="mt-2 text-center text-[11px] text-muted">막대를 누르면 그 달로 이동해요</p>
       </section>

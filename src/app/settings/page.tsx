@@ -29,7 +29,12 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">설정</h1>
+      <header>
+        <Link href="/" className="text-sm text-ink-2">
+          ← 홈
+        </Link>
+        <h1 className="mt-1 text-xl font-bold">설정</h1>
+      </header>
 
       <section className="card divide-y divide-line/60">
         <div className="p-4 text-sm">
