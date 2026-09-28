@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { NewRecurring, NewTransaction, Recurring, Transaction } from "./types";
+import type { NewRecurring, NewTransaction, Note, NoteInput, Recurring, Transaction } from "./types";
 import { addMonths, currentMonth, daysInMonth } from "./format";
 
 /** 화면은 이 인터페이스만 보고, 실제 저장소(Supabase / 데모)는 갈아끼운다. */
@@ -12,9 +12,14 @@ export interface DataStore {
   listRecurring(): Promise<Recurring[]>;
   saveRecurring(row: NewRecurring & { id?: string }): Promise<void>;
   deleteRecurring(id: string): Promise<void>;
+  listNotes(): Promise<Note[]>;
+  /** 새 메모면 만들고, id가 있으면 고친다. 저장된 메모를 돌려준다. */
+  saveNote(note: NoteInput): Promise<Note>;
+  deleteNote(id: string): Promise<void>;
 }
 
 const TX_COLUMNS = "id,date,type,category,title,amount,account,memo,recurring_id";
+const NOTE_COLUMNS = "id,title,body,pinned,updated_at";
 
 export function supabaseStore(sb: SupabaseClient): DataStore {
   const check = <T>({ data, error }: { data: T; error: { message: string } | null }) => {
@@ -68,6 +73,19 @@ export function supabaseStore(sb: SupabaseClient): DataStore {
     async deleteRecurring(id) {
       check(await sb.from("recurring").delete().eq("id", id));
     },
+    async listNotes() {
+      return check(
+        await sb.from("notes").select(NOTE_COLUMNS).order("pinned", { ascending: false }).order("updated_at", { ascending: false }),
+      ) as Note[];
+    },
+    async saveNote({ id, ...note }) {
+      const row = { ...note, updated_at: new Date().toISOString() };
+      const query = id ? sb.from("notes").update(row).eq("id", id) : sb.from("notes").insert(row);
+      return check(await query.select(NOTE_COLUMNS).single()) as Note;
+    },
+    async deleteNote(id) {
+      check(await sb.from("notes").delete().eq("id", id));
+    },
   };
 }
 
@@ -79,6 +97,7 @@ const DEMO_KEY = "money-book:demo";
 interface DemoData {
   transactions: Transaction[];
   recurring: Recurring[];
+  notes?: Note[];
 }
 
 const uid = () =>
@@ -131,7 +150,11 @@ function seedDemo(): DemoData {
       transactions.push({ id: uid(), date: `${month}-${String(day).padStart(2, "0")}`, type: "expense", category, title, amount, account: null, memo: null, recurring_id: null });
     }
   }
-  return { transactions, recurring };
+  const notes: Note[] = [
+    { id: uid(), title: "이번 달 목표", body: "배달 줄이기 (주 2회 이하)\n커피는 회사 탕비실 이용\n적금 만기 확인하기", pinned: true, updated_at: new Date().toISOString() },
+    { id: uid(), title: "관리비 체크", body: "겨울엔 난방비 때문에 관리비가 3~4만원 더 나옴", pinned: false, updated_at: new Date(Date.now() - 86400000 * 3).toISOString() },
+  ];
+  return { transactions, recurring, notes };
 }
 
 function loadDemo(): DemoData {
@@ -195,6 +218,21 @@ export function demoStore(): DataStore {
       mutate((d) => {
         d.recurring = d.recurring.filter((r) => r.id !== id);
         d.transactions = d.transactions.map((t) => (t.recurring_id === id ? { ...t, recurring_id: null } : t));
+      });
+    },
+    async listNotes() {
+      return [...(loadDemo().notes ?? [])].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updated_at.localeCompare(a.updated_at));
+    },
+    async saveNote({ id, ...note }) {
+      const saved: Note = { ...note, id: id ?? uid(), updated_at: new Date().toISOString() };
+      mutate((d) => {
+        d.notes = [saved, ...(d.notes ?? []).filter((n) => n.id !== saved.id)];
+      });
+      return saved;
+    },
+    async deleteNote(id) {
+      mutate((d) => {
+        d.notes = (d.notes ?? []).filter((n) => n.id !== id);
       });
     },
   };

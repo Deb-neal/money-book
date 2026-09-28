@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useApp } from "@/components/AppProvider";
-import type { Recurring, Transaction } from "./types";
+import type { Note, Recurring, Transaction } from "./types";
 
 interface Loaded<T> {
   data: T;
@@ -35,6 +35,7 @@ function useLoad<T>(key: string, empty: T, load: (() => Promise<T>) | null): Loa
 
 const NO_TX: Transaction[] = [];
 const NO_RECURRING: Recurring[] = [];
+const NO_NOTES: Note[] = [];
 
 export function useTransactions(from: string, to: string): Loaded<Transaction[]> {
   const { store, version } = useApp();
@@ -44,4 +45,9 @@ export function useTransactions(from: string, to: string): Loaded<Transaction[]>
 export function useRecurring(): Loaded<Recurring[]> {
   const { store, version } = useApp();
   return useLoad(`${store?.kind}|${version}`, NO_RECURRING, store ? () => store.listRecurring() : null);
+}
+
+export function useNotes(): Loaded<Note[]> {
+  const { store, version } = useApp();
+  return useLoad(`${store?.kind}|${version}|notes`, NO_NOTES, store ? () => store.listNotes() : null);
 }

@@ -28,3 +28,14 @@ export interface Recurring {
 }
 
 export type NewRecurring = Omit<Recurring, "id">;
+
+export interface Note {
+  id: string;
+  title: string;
+  body: string;
+  pinned: boolean;
+  /** ISO 시각 */
+  updated_at: string;
+}
+
+export type NoteInput = Omit<Note, "id" | "updated_at"> & { id?: string };

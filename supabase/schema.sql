@@ -43,5 +43,23 @@ drop policy if exists "own transactions" on public.transactions;
 create policy "own transactions" on public.transactions
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+create table if not exists public.notes (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid() references auth.users on delete cascade,
+  title      text not null default '',
+  body       text not null default '',
+  pinned     boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists notes_user_updated_idx on public.notes (user_id, updated_at desc);
+
+alter table public.notes enable row level security;
+
+drop policy if exists "own notes" on public.notes;
+create policy "own notes" on public.notes
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
 -- 로그인한 사용자(authenticated)에게 테이블 권한 부여. 실제 접근 범위는 위 RLS 정책이 제한한다.
-grant select, insert, update, delete on public.recurring, public.transactions to authenticated;
+grant select, insert, update, delete on public.recurring, public.transactions, public.notes to authenticated;

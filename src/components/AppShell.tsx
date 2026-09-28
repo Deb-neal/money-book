@@ -12,6 +12,7 @@ const NAV = [
   { href: "/add/", label: "추가", icon: "M12 5v14M5 12h14", primary: true },
   { href: "/yearly/", label: "연간", icon: "M4 20V10M10 20V4M16 20v-7M22 20H2" },
   { href: "/recurring/", label: "고정", icon: "M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4" },
+  { href: "/notes/", label: "메모", icon: "M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h5" },
 ];
 
 export const SETTINGS_ICON = "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 14H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 3.1V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z";
@@ -48,7 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
       <main className="flex-1 px-4 pb-28 pt-4">{children}</main>
       <nav className="pb-safe fixed inset-x-0 bottom-0 z-20 border-t border-line bg-card/95 backdrop-blur">
-        <ul className="mx-auto grid max-w-md grid-cols-5">
+        <ul className="mx-auto grid max-w-md grid-cols-6">
           {NAV.map((item) => {
             const active = (item.href.replace(/\/$/, "") || "/") === pathname;
             return (
