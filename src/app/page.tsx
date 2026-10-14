@@ -7,6 +7,7 @@ import { Icon, SETTINGS_ICON } from "@/components/AppShell";
 import { CategoryBars, DailyCumulativeChart, YearChart } from "@/components/Charts";
 import { EditSheet } from "@/components/EditSheet";
 import { MonthSwitcher } from "@/components/MonthSwitcher";
+import { CardBillSummary } from "@/components/CardBillSummary";
 import { TransactionRow } from "@/components/TransactionList";
 import { byCategory, byMonth, dailyExpense, totals } from "@/lib/aggregate";
 import { addMonths, currentMonth, daysInMonth, won } from "@/lib/format";
@@ -79,6 +80,8 @@ export default function Dashboard() {
       </header>
 
       {error && <p className="card p-3 text-sm text-danger">불러오지 못했어요: {error}</p>}
+
+      <CardBillSummary month={month} />
 
       {pending.length > 0 && !loading && (
         <div className="card flex items-center gap-3 p-3">

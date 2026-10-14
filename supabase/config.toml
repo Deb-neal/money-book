@@ -1,0 +1,4 @@
+project_id = "money-book"
+
+[functions.analyze-card-bill]
+verify_jwt = true

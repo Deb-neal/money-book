@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { NewRecurring, NewTransaction, Note, NoteInput, Recurring, Transaction } from "./types";
 import { addMonths, currentMonth, daysInMonth } from "./format";
+import { validateBill, type CardBill, type CardBillInput } from "./cardBills";
 
 /** 화면은 이 인터페이스만 보고, 실제 저장소(Supabase / 데모)는 갈아끼운다. */
 export interface DataStore {
@@ -16,10 +17,20 @@ export interface DataStore {
   /** 새 메모면 만들고, id가 있으면 고친다. 저장된 메모를 돌려준다. */
   saveNote(note: NoteInput): Promise<Note>;
   deleteNote(id: string): Promise<void>;
+  listCardBills(month: string): Promise<CardBill[]>;
+  saveCardBill(bill: CardBillInput): Promise<void>;
+  updateCardBillMemo(id: string, memo: string): Promise<void>;
+  deleteCardBill(id: string): Promise<void>;
 }
 
 const TX_COLUMNS = "id,date,type,category,title,amount,account,memo,recurring_id";
 const NOTE_COLUMNS = "id,title,body,pinned,updated_at";
+const BILL_COLUMNS = "id,issuer,billing_month,total_amount,due_date,as_of_date,lump_sum,installment,memo,updated_at";
+
+function cleanBillMemo(memo: string): string | null {
+  if (memo.length > 500) throw new Error("메모는 500자 이내로 입력해 주세요.");
+  return memo.trim() || null;
+}
 
 export function supabaseStore(sb: SupabaseClient): DataStore {
   const check = <T>({ data, error }: { data: T; error: { message: string } | null }) => {
@@ -86,6 +97,21 @@ export function supabaseStore(sb: SupabaseClient): DataStore {
     async deleteNote(id) {
       check(await sb.from("notes").delete().eq("id", id));
     },
+    async listCardBills(month) {
+      return check(await sb.from("card_bills").select(BILL_COLUMNS).eq("billing_month", month).order("due_date", { nullsFirst: false }).order("issuer")) as CardBill[];
+    },
+    async saveCardBill(bill) {
+      const row = validateBill(bill);
+      const { data, error } = await sb.auth.getUser();
+      if (error || !data.user) throw new Error("다시 로그인해 주세요.");
+      check(await sb.from("card_bills").upsert({ ...row, user_id: data.user.id, updated_at: new Date().toISOString() }, { onConflict: "user_id,issuer,billing_month" }));
+    },
+    async deleteCardBill(id) {
+      check(await sb.from("card_bills").delete().eq("id", id));
+    },
+    async updateCardBillMemo(id, memo) {
+      check(await sb.from("card_bills").update({ memo: cleanBillMemo(memo), updated_at: new Date().toISOString() }).eq("id", id).select("id").single());
+    },
   };
 }
 
@@ -98,6 +124,7 @@ interface DemoData {
   transactions: Transaction[];
   recurring: Recurring[];
   notes?: Note[];
+  cardBills?: CardBill[];
 }
 
 const uid = () =>
@@ -234,6 +261,31 @@ export function demoStore(): DataStore {
       mutate((d) => {
         d.notes = (d.notes ?? []).filter((n) => n.id !== id);
       });
+    },
+    async listCardBills(month) {
+      return (loadDemo().cardBills ?? []).filter((b) => b.billing_month === month)
+        .sort((a, b) => (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999") || a.issuer.localeCompare(b.issuer));
+    },
+    async saveCardBill(bill) {
+      const row = validateBill(bill);
+      const d = loadDemo();
+      const previous = (d.cardBills ?? []).find((b) => b.issuer === row.issuer && b.billing_month === row.billing_month);
+      d.cardBills = [...(d.cardBills ?? []).filter((b) => b.id !== previous?.id), { ...row, id: previous?.id ?? uid(), updated_at: new Date().toISOString() }];
+      // 카드값 저장 실패를 성공으로 표시하지 않는다 (용량 초과/브라우저 저장 차단).
+      localStorage.setItem(DEMO_KEY, JSON.stringify(d));
+    },
+    async deleteCardBill(id) {
+      const d = loadDemo();
+      d.cardBills = (d.cardBills ?? []).filter((b) => b.id !== id);
+      localStorage.setItem(DEMO_KEY, JSON.stringify(d));
+    },
+    async updateCardBillMemo(id, memo) {
+      const d = loadDemo();
+      const bill = d.cardBills?.find((b) => b.id === id);
+      if (!bill) throw new Error("카드값을 찾지 못했어요. 다시 불러와 주세요.");
+      bill.memo = cleanBillMemo(memo);
+      bill.updated_at = new Date().toISOString();
+      localStorage.setItem(DEMO_KEY, JSON.stringify(d));
     },
   };
 }

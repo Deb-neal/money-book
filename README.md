@@ -7,6 +7,7 @@
 - **차트**: 월별 수입/지출/저축, 카테고리별 지출, 지난달과 비교한 이번 달 지출 흐름
 - **노션 가져오기**: 노션 가계부 내보내기 ZIP을 그대로 올리면 유형을 매핑하고 중복을 걸러서 가져와요.
 - **데모 모드**: 로그인 없이 가짜 데이터로 둘러볼 수 있어요 (포트폴리오 방문자용).
+- **카드값 모아보기**: 카드사 앱의 청구 화면을 분석하고 확인 후 저장해요. 카드사별 결제일과 월 청구액 합계를 홈에서 확인할 수 있어요.
 
 ## 구조
 
@@ -26,6 +27,7 @@ GitHub Pages에는 서버가 없어서 비밀번호를 프런트엔드 코드로
 | `/recurring` | 고정 항목 관리 |
 | `/import` | 노션 가져오기 |
 | `/settings` | CSV 내보내기, 로그아웃 |
+| `/cards` | 카드사별 월 결제 예정금액 · 캡처 분석 · 직접 입력 |
 
 ## 시작하기
 
@@ -71,3 +73,56 @@ npx tsx scripts/test-import.mts   # 샘플 ZIP으로 파서 확인
 ## 기술 스택
 
 Next.js 16 (App Router, static export) · React 19 · TypeScript · Tailwind CSS 4 · Supabase · Recharts · PapaParse · fflate
+
+## 카드값 모아보기 설정
+
+이 기능은 **카드사별 월 청구 총액**을 관리합니다. 개별 거래는 생성하지 않고 기존 지출 합계와 별도로 표시합니다. 같은 카드사·결제 월로 저장하면 이전 값을 갱신합니다. 카드사 합계가 나온 화면을 사용하세요. 여러 카드의 개별 청구 화면을 같은 카드사로 저장하면 합산되지 않고 갱신됩니다.
+
+### 데이터베이스
+
+기존 Supabase 프로젝트의 SQL Editor에서 `supabase/migrations/202610140001_card_bills.sql`을 실행하세요. 새 프로젝트는 `supabase/schema.sql`에 포함되어 있습니다. 본인 데이터만 접근하도록 RLS를 적용합니다. 기존 거래/메모 테이블은 변경하지 않습니다.
+
+### 이미지 분석 서버
+
+GitHub Pages는 화면을 제공하고, Supabase Edge Function `analyze-card-bill`이 로그인 토큰을 검증한 뒤 OpenAI Responses API를 호출합니다. 분석 결과는 확인 폼에만 채워지며 사용자가 저장하기 전에는 DB에 기록하지 않습니다.
+
+1. Supabase CLI로 로그인하고 해당 프로젝트를 연결합니다.
+
+   ```bash
+   npx supabase login
+   npx supabase link --project-ref YOUR_PROJECT_REF
+   ```
+
+2. Supabase Dashboard → Edge Functions → Secrets에서 `OPENAI_API_KEY`를 등록합니다. 선택 항목 `OPENAI_VISION_MODEL`의 기본값은 `gpt-4.1-mini`입니다. 이미지 입력과 Structured Outputs를 지원하는 모델을 사용하세요. 이 키는 프런트엔드 `.env`나 `NEXT_PUBLIC_*`에 넣지 않습니다.
+
+3. 함수를 배포합니다. 로그인 JWT 검증은 활성화한 채로 유지하세요.
+
+   ```bash
+   npx supabase functions deploy analyze-card-bill
+   ```
+
+4. 프런트엔드는 기존 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`로 연결합니다. Node.js 20.9 이상에서 `npm run build` 후 기존 GitHub Pages 배포를 사용합니다.
+
+### 사용 및 인식 범위
+
+- 홈의 **카드값 → 캡처 등록 · 관리**에서 캡처를 선택하고 **캡처 분석**을 누릅니다. JPG/PNG/WebP, 원본 최대 10MB를 지원합니다.
+- 브라우저에서 JPEG로 재인코딩한 이미지를 분석 서비스로 전송합니다. 원본 이미지/계좌번호를 머니북 DB나 Storage에 저장하지 않습니다. API 요청은 `store: false`입니다(분석 제공업체 자체의 데이터 보관 정책은 별도입니다).
+- 청구 총액, 카드사, 실제 결제일, 금액 기준일, 일시불·할부를 추출합니다. 상단 조회 날짜를 결제일로 대체하지 않습니다. 명시된 연도가 없거나 여러 청구액이 모호하면 사용자 확인을 요구합니다.
+- 누적 이용금액을 청구 총액으로 자동 선택하지 않습니다. 다른 카드사 UI도 같은 분석 경로를 사용하지만 인식 정확도는 실화면으로 확인해야 합니다.
+- 카드사/결제 월/금액을 확인하고 저장합니다. 기존보다 오래된 기준일이면 갱신 전에 안내합니다.
+- 카드사별 금액 아래의 **메모 추가/수정**에서 해당 결제 월의 메모를 500자까지 저장할 수 있습니다. 빈 메모를 저장하면 지워집니다. 캡처를 다시 등록할 때 새 메모를 입력하지 않으면 기존 메모가 유지됩니다.
+- 데모 모드에서는 직접 입력·수정·합계를 브라우저에 저장하며 AI 호출은 하지 않습니다. 이미지 분석을 연결하지 않아도 데이터 테이블이 있으면 직접 입력은 가능합니다.
+- 이 변경에는 **개별 결제 내역 캡처 → 거래 자동 입력** 기능은 포함하지 않습니다.
+
+### 검증
+
+```bash
+npm run lint
+npm run build
+npx tsx --test scripts/test-card-bills.mts
+npx deno check supabase/functions/analyze-card-bill/index.ts
+```
+
+테스트는 카드사 정규화, 월별 중복 갱신, 기존 데이터 보존, 모호한 총액, 날짜 검증, 인증 실패, 과대 이미지, 모델 거절/시간초과를 다룹니다. API 응답은 모의 응답이며, 실제 AI 인식과 운영 DB 연결은 위 설정 후 별도 확인해야 합니다.
+
+구현 참고: [OpenAI 이미지 입력](https://developers.openai.com/api/docs/guides/images-vision), [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses), [Supabase 함수 인증](https://supabase.com/docs/guides/functions/auth).
