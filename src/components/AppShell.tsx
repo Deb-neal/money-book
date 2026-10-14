@@ -41,13 +41,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col">
+    <div className="app-shell pt-safe mx-auto flex min-h-dvh w-full min-w-0 max-w-md flex-col">
       {store.kind === "demo" && (
-        <div className="pt-safe bg-accent text-center text-xs font-medium text-accent-ink">
+        <div className="bg-accent text-center text-xs font-medium text-accent-ink">
           <div className="py-1.5">데모 모드 · 가짜 데이터가 이 브라우저에만 저장돼요</div>
         </div>
       )}
-      <main className="flex-1 px-4 pb-28 pt-4">{children}</main>
+      <main className="app-main min-w-0 flex-1 px-4 pt-4">{children}</main>
       <nav className="pb-safe fixed inset-x-0 bottom-0 z-20 border-t border-line bg-card/95 backdrop-blur">
         <ul className="mx-auto grid max-w-md grid-cols-6">
           {NAV.map((item) => {

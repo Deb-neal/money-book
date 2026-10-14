@@ -85,10 +85,10 @@ export function CardBillEditor({ month, initial, onClose, onSaved }: {
   }
 
   return (
-    <section className="card space-y-4 p-4" aria-label="카드값 등록">
+    <section className="card min-w-0 space-y-4 p-4" aria-label="카드값 등록">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">{initial ? "카드값 수정" : "카드값 등록"}</h2>
-        <button type="button" className="text-sm text-ink-2" disabled={busy} onClick={onClose}>취소</button>
+        <button type="button" className="min-h-11 min-w-11 text-sm text-ink-2" disabled={busy} onClick={onClose}>취소</button>
       </div>
       {!initial && <div className="space-y-3 rounded-xl border border-dashed border-line p-3">
         <label className="block text-sm font-medium" htmlFor="bill-image">카드 앱의 결제 예정금액 캡처</label>
@@ -119,8 +119,8 @@ export function CardBillEditor({ month, initial, onClose, onSaved }: {
           </li>)}
         </ul>}
       </div>}
-      <form className="space-y-3" onSubmit={save}>
-        <fieldset disabled={busy} className="space-y-3">
+      <form className="min-w-0 space-y-4" onSubmit={save}>
+        <fieldset disabled={busy} className="min-w-0 space-y-4">
           <label className="block text-sm">카드사
             <input aria-label="카드사" className="field mt-1" list="card-issuers" value={draft.issuer} maxLength={40} required disabled={!!initial}
               placeholder="예: 롯데카드" onChange={(e) => update("issuer", e.target.value)} />
@@ -132,7 +132,7 @@ export function CardBillEditor({ month, initial, onClose, onSaved }: {
           <label className="block text-sm">결제 예정금액 (원)
             <input aria-label="결제 예정금액" className="field tabular mt-1 text-lg font-semibold" inputMode="numeric" required placeholder="0" value={draft.total_amount} onChange={(e) => update("total_amount", e.target.value)} />
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2">
             <label className="min-w-0 text-sm">실제 결제일
               <input aria-label="실제 결제일" type="date" className="field mt-1" value={draft.due_date} onChange={(e) => {
                 const due = e.target.value;
@@ -144,7 +144,7 @@ export function CardBillEditor({ month, initial, onClose, onSaved }: {
             </label>
           </div>
           <details>
-            <summary className="cursor-pointer text-sm text-ink-2">일시불 · 할부 (선택)</summary>
+            <summary className="min-h-11 cursor-pointer py-3 text-sm text-ink-2">일시불 · 할부 (선택)</summary>
             <div className="mt-3 space-y-3">
               <label className="block text-sm">일시불 (원)<input aria-label="일시불" className="field mt-1" inputMode="numeric" value={draft.lump_sum} onChange={(e) => update("lump_sum", e.target.value)} /></label>
               <label className="block text-sm">이번 청구 할부금 (원)<input aria-label="이번 청구 할부금" className="field mt-1" inputMode="numeric" value={draft.installment} onChange={(e) => update("installment", e.target.value)} /></label>

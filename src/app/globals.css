@@ -61,6 +61,11 @@ body {
   color: var(--ink);
 }
 
+html {
+  scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 1rem);
+  scroll-padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6rem);
+}
+
 body {
   font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;
@@ -78,9 +83,27 @@ body {
   padding-top: env(safe-area-inset-top);
 }
 
+/* 홈 화면 앱에서도 스크롤한 내용이 상태 표시줄 뒤로 비치지 않게 한다. */
+.app-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  background: var(--bg);
+  pointer-events: none;
+  z-index: 50;
+}
+
+.app-main {
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+}
+
 /* 입력 요소 공통 */
 .field {
+  box-sizing: border-box;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   border-radius: 0.75rem;
   border: 1px solid var(--line);
   background: var(--card);
@@ -90,6 +113,23 @@ body {
 }
 .field:focus {
   border-color: var(--accent);
+}
+
+/* iOS의 기본 날짜 컨트롤이 부모 너비보다 커지는 것을 방지한다. */
+.field:is([type="date"], [type="month"]) {
+  display: block;
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 3rem;
+  text-align: left;
+}
+.field::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: left;
+}
+.field::-webkit-datetime-edit {
+  min-width: 0;
+  padding: 0;
 }
 
 .btn {
