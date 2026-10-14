@@ -95,7 +95,7 @@ GitHub Pages는 화면을 제공하고, Supabase Edge Function `analyze-card-bil
 
 2. Supabase Dashboard → Edge Functions → Secrets에서 `OPENAI_API_KEY`를 등록합니다. 선택 항목 `OPENAI_VISION_MODEL`의 기본값은 `gpt-4.1-mini`입니다. 이미지 입력과 Structured Outputs를 지원하는 모델을 사용하세요. 이 키는 프런트엔드 `.env`나 `NEXT_PUBLIC_*`에 넣지 않습니다.
 
-3. 함수를 배포합니다. 로그인 JWT 검증은 활성화한 채로 유지하세요.
+3. 함수를 배포합니다. 이 프로젝트의 로그인 토큰은 ES256입니다. Dashboard의 **Verify JWT with legacy secret**은 끄고, 함수 내부에서 Supabase Auth `/user`를 호출해 토큰을 검증합니다. `supabase/config.toml`도 이 설정을 사용합니다. 인증 없는 요청과 익명 사용자는 함수가 거절합니다.
 
    ```bash
    npx supabase functions deploy analyze-card-bill
